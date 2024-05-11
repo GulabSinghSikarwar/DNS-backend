@@ -1,5 +1,5 @@
 const route53 = require('../../services/awsService')()
-
+const { uploadFile, processRecords } = require('../helpers/utils')
 
 async function fetchRecordsForHostedZone(hostedZoneId) {
     try {
@@ -95,11 +95,21 @@ async function deleteRecords(hostedZoneId, records) {
     }
 }
 
+async function bulkUpload(req, resp) {
+    try {
+        const file = req.file;
+        const records = await processRecords(file.path);
+        await uploadFile(records);
+        res.send('File uploaded and data pushed to Route 53');
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).send('Internal Server Error');
+    }
+}
 
 
 
 
 
 
-
-module.exports = { createRecord, fetchRecordsForHostedZone ,updateRecord,deleteRecords }
+module.exports = { createRecord, fetchRecordsForHostedZone, updateRecord, deleteRecords, bulkUpload }

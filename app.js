@@ -7,8 +7,11 @@ const indexRouter = require('./routes/index')
 const app = express();
 const bodyParser = require('body-parser')
 const cors = require('cors');
+
+const multer = require('multer');
 const connectToDb = require('./DB/connection');
 
+const upload = multer({ dest: 'uploads/' });
 // Use the hosted zones router
 
 app.use(cors());

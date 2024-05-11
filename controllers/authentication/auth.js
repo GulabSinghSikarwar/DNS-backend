@@ -1,7 +1,7 @@
-const User= require('../../models/user')
-const bcrypt= require('bcrypt')
-const jwt=require('jsonwebtoken')
-
+const User = require('../../models/user')
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+const { verifyToken } = require('../helpers/middleware')
 const registerUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -22,9 +22,10 @@ const registerUser = async (req, res) => {
         });
 
         // Save the user to the database
-        const createdUser= await newUser.save();
+        const createdUser = await newUser.save();
+        const token = generateToken(createdUser);
 
-        res.status(201).send({message:'User registered', user:createdUser});
+        res.status(201).send({ message: 'User registered', user: createdUser, token });
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).send('Error registering user');
@@ -50,10 +51,14 @@ const loginUser = async (req, res) => {
         }
 
         // Generate JWT or any other authentication mechanism you are using
-        const token = generateToken(user); // Assuming you have a function to generate JWT tokens
+        const token = generateToken(user);
+        const result = await verifyToken(token);
+
+        // Assuming you have a function to generate JWT tokens
         res.json({
             message: 'Logged in successfully',
-            token
+            token,
+            result
         });
     } catch (error) {
         console.error('Error logging in user:', error);
@@ -62,8 +67,29 @@ const loginUser = async (req, res) => {
 };
 
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: '24h', // expires in 24 hours
+    return jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '4h', // expires in 4 hours
     });
 };
-module.exports ={loginUser, registerUser}
+
+
+const validateToken = async (req, res) => {
+    try {
+        // Extract token from request body
+        const body = req.body;  // Replace with your actual secret key
+        const token = req.body.token.trim().replace(/^"(.*)"$/, '$1')
+        console.log('token -------------: ', token);
+        // Verify token
+        console.log("token : ", token);
+        const result = await verifyToken(token);
+
+        if (result.valid) {
+            res.status(200).json({ message: 'Token is valid', userId: result.userId });
+        } else {
+            res.status(401).json({ error: result.error });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+module.exports = { loginUser, registerUser, validateToken }
