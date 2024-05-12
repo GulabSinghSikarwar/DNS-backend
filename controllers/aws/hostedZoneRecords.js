@@ -1,5 +1,5 @@
 const route53 = require('../../services/awsService')()
-
+const { uploadFile, processRecords } = require('../helpers/utils')
 
 async function fetchRecordsForHostedZone(hostedZoneId) {
     try {
@@ -16,30 +16,38 @@ async function fetchRecordsForHostedZone(hostedZoneId) {
 }
 
 
-async function createRecord(hostedZoneId, recordName, recordType, recordValue, ttl = 300) {
+async function createRecord(hostedZoneId, records) {
+    
+    // console.log("zone id  : ",records);
+    
+    const changes = records.map(record => ({
+        Action: "CREATE",
+        ResourceRecordSet: {
+            Name: record.Name,
+            Type: record.Type,
+            TTL: record.TTL || 300,
+            ResourceRecords: [...record.ResourceRecords]
+        }
+    }));
+    
+
     const params = {
         HostedZoneId: hostedZoneId,
         ChangeBatch: {
-            Changes: [{
-                Action: "CREATE",
-                ResourceRecordSet: {
-                    Name: recordName,
-                    Type: recordType,
-                    TTL: ttl,
-                    ResourceRecords: [{ Value: recordValue }]
-                }
-            }]
+            Changes: changes
         }
     };
 
     try {
+        console.log("params : .......................",JSON.stringify(params));
         const data = await route53.changeResourceRecordSets(params).promise();
         return data;
     } catch (error) {
-        console.error('Error creating record:', error);
+        console.error('Error creating records:', error);
         throw error;
     }
 }
+
 
 
 async function updateRecord(hostedZoneId, recordName, recordType, newRecordValue, ttl = 300) {
@@ -52,7 +60,7 @@ async function updateRecord(hostedZoneId, recordName, recordType, newRecordValue
                     Name: recordName,
                     Type: recordType,
                     TTL: ttl,
-                    ResourceRecords: [{ Value: newRecordValue }]
+                    ResourceRecords:newRecordValue
                 }
             }]
         }
@@ -72,10 +80,10 @@ async function deleteRecords(hostedZoneId, records) {
     const changes = records.map(record => ({
         Action: "DELETE",
         ResourceRecordSet: {
-            Name: record.name,
-            Type: record.type,
-            TTL: record.ttl || 3600, // Use the provided TTL value or default to 3600
-            ResourceRecords: record.resourceRecords || [{ Value: "placeholder" }] // Use the provided ResourceRecords or default to placeholder
+            Name: record.Name,
+            Type: record.Type,
+            TTL: record.TTL || 3600, // Use the provided TTL value or default to 3600
+            ResourceRecords: record.ResourceRecords || [{ Value: "placeholder" }] // Use the provided ResourceRecords or default to placeholder
         }
     }));
 
@@ -95,11 +103,21 @@ async function deleteRecords(hostedZoneId, records) {
     }
 }
 
+async function bulkUpload(req, resp) {
+    try {
+        const file = req.file;
+        const records = await processRecords(file.path);
+        await uploadFile(records);
+        res.send('File uploaded and data pushed to Route 53');
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).send('Internal Server Error');
+    }
+}
 
 
 
 
 
 
-
-module.exports = { createRecord, fetchRecordsForHostedZone ,updateRecord,deleteRecords }
+module.exports = { createRecord, fetchRecordsForHostedZone, updateRecord, deleteRecords, bulkUpload }

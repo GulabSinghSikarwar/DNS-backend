@@ -11,6 +11,7 @@ const getAwsRoute53 = () => {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
     });
     route53 = new AWS.Route53();
+    return route53
 }
 
 
