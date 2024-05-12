@@ -19,7 +19,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(indexRouter);
-
+app.use('/',(req,res)=>{
+    res.status(200).json({
+        status:"working fine",
+    })
+})
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {

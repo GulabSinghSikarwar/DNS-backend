@@ -1,4 +1,4 @@
-const getAwsRoute53= require('../../services/awsService')
+const getAwsRoute53 = require('../../services/awsService')
 
 // const AWS=require('aws-sdk')
 
@@ -11,7 +11,7 @@ const getAwsRoute53= require('../../services/awsService')
 async function listHostedZones() {
     const params = {};
     let hostedZones = [];
-    const route53=getAwsRoute53()
+    const route53 = getAwsRoute53()
     let data;
     do {
         data = await route53.listHostedZones(params).promise();
@@ -23,7 +23,7 @@ async function listHostedZones() {
 }
 
 async function createHostedZone(domainName, callerReference, comment = '', isPrivateZone = false, vpcId = null, vpcRegion = null) {
-    const route53=getAwsRoute53()
+    const route53 = getAwsRoute53()
     const params = {
         Name: domainName,
         CallerReference: callerReference,
@@ -50,7 +50,7 @@ async function createHostedZone(domainName, callerReference, comment = '', isPri
 }
 
 async function deleteHostedZone(hostedZoneId) {
-    const route53=getAwsRoute53()
+    const route53 = getAwsRoute53()
     const params = {
         Id: hostedZoneId
     };
@@ -65,4 +65,4 @@ async function deleteHostedZone(hostedZoneId) {
 }
 
 
-module.exports ={listHostedZones,createHostedZone, deleteHostedZone}
+module.exports = { listHostedZones, createHostedZone, deleteHostedZone }

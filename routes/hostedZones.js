@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { listHostedZones, createHostedZone, deleteHostedZone } = require('../controllers/aws/hostedZones');
-const { createRecord, fetchRecordsForHostedZone,updateRecord  ,deleteRecords} = require('../controllers/aws/hostedZoneRecords');
+const { createRecord, fetchRecordsForHostedZone, updateRecord, deleteRecords } = require('../controllers/aws/hostedZoneRecords');
 
 // Existing GET route
 router.get('/', async (req, res) => {
@@ -57,21 +57,32 @@ router.get('/:hostedZoneId/records', async (req, res) => {
 
 router.post('/:hostedZoneId/records', async (req, res) => {
     const { hostedZoneId } = req.params;
-    const { recordName, recordType, recordValue, ttl } = req.body;
+    console.log(" requ : ", hostedZoneId);
+    const records = req.body;
+    console.log(" body : ", records);
     try {
-        const createdRecord = await createRecord(hostedZoneId, recordName, recordType, recordValue, ttl);
-        res.json(createdRecord);
+        const createdRecords = await createRecord(hostedZoneId, records);
+        res.json(createdRecords);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create record' });
+        res.status(500).json({ error: 'Failed to create records' });
     }
 });
 
+
 // UPDATE RECODS 
 router.put('/:hostedZoneId/records/', async (req, res) => {
-    const { hostedZoneId, recordId } = req.params;
-    const { recordName, recordType, recordValue, ttl } = req.body;
+    const { hostedZoneId } = req.params;
+    const { Name, Type, ResourceRecords, TTL } = req.body[0];
+    const message = `
+    ${Name}, 
+    ${TTL},
+    ${Type},
+    ${ResourceRecords}
+    `
+    console.log(" message : ",message);
+    console.log(" BODY : ", req.body[0]);
     try {
-        const updatedRecord = await updateRecord(hostedZoneId, recordName, recordType, recordValue, ttl);
+        const updatedRecord = await updateRecord(hostedZoneId, Name,Type, ResourceRecords, TTL);
         res.json(updatedRecord);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update record' });
@@ -81,8 +92,9 @@ router.put('/:hostedZoneId/records/', async (req, res) => {
 // Deleting Records     
 router.delete('/:hostedZoneId/records', async (req, res) => {
     const { hostedZoneId } = req.params;
-    const { records } = req.body; // Assuming records is an array of objects containing name and type
+    const records  = req.body; // Assuming records is an array of objects containing name and type
 
+    console.log("  records : ",JSON.stringify(records));
     try {
         const deletedRecords = await deleteRecords(hostedZoneId, records);
         res.json(deletedRecords);
